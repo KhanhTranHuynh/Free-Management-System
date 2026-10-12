@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { api, getKey, isLocalMode, setKey, type Invoice, type Service } from './api'
+import { api, cache, getKey, isLocalMode, setKey, type Invoice, type Service } from './api'
 
 const money = (n: number) => new Intl.NumberFormat('vi-VN').format(n) + ' ₫'
 const dateStr = (iso: string) => new Date(iso).toLocaleString('vi-VN')
@@ -13,12 +13,12 @@ const qrUrl = (acc: string, name: string, amount: number, memo: string) =>
 
 export default function App() {
   const [tab, setTab] = useState<Tab>('new')
-  const [services, setServices] = useState<Service[]>([])
+  // Có sẵn cache trên máy thì hiện ngay, không chờ server.
+  const [services, setServices] = useState<Service[]>(() => cache.services() || [])
   const [error, setError] = useState('')
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(() => !cache.services())
 
   const reload = useCallback(async () => {
-    setLoading(true)
     try {
       setServices(await api.listServices())
       setError('')
@@ -29,7 +29,10 @@ export default function App() {
     }
   }, [])
   useEffect(() => {
-    reload()
+    // Tải dịch vụ xong thì tải sẵn danh sách hóa đơn ở nền để mở tab Hóa đơn là có ngay.
+    reload().then(() => {
+      api.listInvoices().catch(() => {})
+    })
   }, [reload])
 
   return (
@@ -211,10 +214,10 @@ function InvoiceView({ invoice, onClose, closeLabel }: { invoice: Invoice; onClo
 }
 
 function InvoiceList() {
-  const [list, setList] = useState<Invoice[]>([])
+  const [list, setList] = useState<Invoice[]>(() => cache.invoices() || [])
   const [open, setOpen] = useState<Invoice | null>(null)
   const [err, setErr] = useState('')
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(() => !cache.invoices())
 
   useEffect(() => {
     api.listInvoices().then(setList).catch((e) => setErr(e.message)).finally(() => setLoading(false))
