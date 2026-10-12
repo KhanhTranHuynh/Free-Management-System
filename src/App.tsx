@@ -5,6 +5,12 @@ const money = (n: number) => new Intl.NumberFormat('vi-VN').format(n) + ' ₫'
 const dateStr = (iso: string) => new Date(iso).toLocaleString('vi-VN')
 type Tab = 'new' | 'invoices' | 'services' | 'settings'
 
+// VietQR (miễn phí, không cần API key): Techcombank, BIN 970407
+const BANK_BIN = '970407'
+const qrUrl = (acc: string, name: string, amount: number, memo: string) =>
+  `https://img.vietqr.io/image/${BANK_BIN}-${encodeURIComponent(acc)}-compact2.png` +
+  `?amount=${Math.round(amount)}&addInfo=${encodeURIComponent(memo)}&accountName=${encodeURIComponent(name)}`
+
 export default function App() {
   const [tab, setTab] = useState<Tab>('new')
   const [services, setServices] = useState<Service[]>([])
@@ -153,6 +159,9 @@ function NewInvoice({ services, loading }: { services: Service[]; loading: boole
 function InvoiceView({ invoice, onClose, closeLabel }: { invoice: Invoice; onClose: () => void; closeLabel: string }) {
   const shop = localStorage.getItem('shopName') || 'Tên cửa hàng'
   const info = localStorage.getItem('shopInfo') || ''
+  const bankAcc = (localStorage.getItem('bankAcc') || '').replace(/\s/g, '')
+  const bankName = localStorage.getItem('bankName') || ''
+  const memo = 'HD' + invoice.number.replace(/\D/g, '')
   return (
     <section>
       <div className="invoice">
@@ -180,6 +189,16 @@ function InvoiceView({ invoice, onClose, closeLabel }: { invoice: Invoice; onClo
           {invoice.discount > 0 && <div><span>Giảm giá</span><span>− {money(invoice.discount)}</span></div>}
           <div className="grand"><span>Tổng cộng</span><span>{money(invoice.total)}</span></div>
         </div>
+        {bankAcc && invoice.total > 0 && (
+          <div className="qr center">
+            <img src={qrUrl(bankAcc, bankName, invoice.total, memo)} alt="Mã QR chuyển khoản" />
+            <p className="muted">
+              Techcombank · {bankAcc}{bankName && ` · ${bankName}`}
+              <br />
+              Quét QR để chuyển đúng {money(invoice.total)}, nội dung: {memo}
+            </p>
+          </div>
+        )}
         {invoice.note && <p className="muted">Ghi chú: {invoice.note}</p>}
         <p className="center muted">Cảm ơn quý khách!</p>
       </div>
@@ -302,9 +321,13 @@ function Settings() {
   const [key, setK] = useState(getKey())
   const [shop, setShop] = useState(localStorage.getItem('shopName') || '')
   const [info, setInfo] = useState(localStorage.getItem('shopInfo') || '')
+  const [bankAcc, setBankAcc] = useState(localStorage.getItem('bankAcc') || '')
+  const [bankName, setBankName] = useState(localStorage.getItem('bankName') || '')
   const [saved, setSaved] = useState(false)
 
   function save() {
+    localStorage.setItem('bankAcc', bankAcc.replace(/\s/g, ''))
+    localStorage.setItem('bankName', bankName.trim().toUpperCase())
     setKey(key.trim())
     localStorage.setItem('shopName', shop)
     localStorage.setItem('shopInfo', info)
@@ -320,6 +343,10 @@ function Settings() {
         <input value={shop} onChange={(e) => setShop(e.target.value)} />
         <label>Địa chỉ / SĐT / STK (hiện trên hóa đơn)</label>
         <textarea rows={3} value={info} onChange={(e) => setInfo(e.target.value)} />
+        <label>Số tài khoản Techcombank (để tạo QR thanh toán)</label>
+        <input inputMode="numeric" value={bankAcc} onChange={(e) => setBankAcc(e.target.value)} />
+        <label>Tên chủ tài khoản (không dấu, viết hoa)</label>
+        <input value={bankName} onChange={(e) => setBankName(e.target.value)} />
         {!isLocalMode && (
           <>
             <label>Mã truy cập (lấy từ Apps Script)</label>

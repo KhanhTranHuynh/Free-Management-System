@@ -34,6 +34,8 @@ nav button.active { color: var(--c); font-weight: 700; box-shadow: inset 0 -3px 
 table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: .92rem; }
 th, td { padding: 6px 4px; border-bottom: 1px solid var(--line); text-align: left; }
 .r { text-align: right; }
+.qr { margin-top: 12px; }
+.qr img { width: 100%; max-width: 280px; height: auto; }
 @media print {
   .no-print { display: none !important; }
   body { background: #fff; }
