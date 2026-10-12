@@ -115,11 +115,46 @@ function call<T>(action: keyof typeof local, data: object = {}): Promise<T> {
   return remote<T>(action, data)
 }
 
+/* ---------- Cache trên máy: mở app/tab là hiện ngay, cập nhật ở nền ---------- */
+export const cache = {
+  services: () => load<Service[] | null>('c_services', null),
+  invoices: () => load<Invoice[] | null>('c_invoices', null),
+  invoice: (id: string) => load<Invoice | null>('c_inv_' + id, null),
+}
+
 export const api = {
-  listServices: () => call<Service[]>('listServices'),
+  listServices: async () => {
+    const r = await call<Service[]>('listServices')
+    save('c_services', r)
+    return r
+  },
   saveService: (p: { id?: string; name: string; price: number }) => call<Service>('saveService', p),
   deleteService: (id: string) => call<boolean>('deleteService', { id }),
-  createInvoice: (p: NewInvoice) => call<Invoice>('createInvoice', p),
-  listInvoices: () => call<Invoice[]>('listInvoices'),
-  getInvoice: (id: string) => call<Invoice>('getInvoice', { id }),
+  createInvoice: async (p: NewInvoice) => {
+    const r = await call<Invoice>('createInvoice', p)
+    try {
+      save('c_inv_' + r.id, r)
+      save('c_invoices', [r, ...(cache.invoices() || [])].slice(0, 100))
+    } catch {
+      /* hết chỗ lưu thì bỏ qua */
+    }
+    return r
+  },
+  listInvoices: async () => {
+    const r = await call<Invoice[]>('listInvoices')
+    save('c_invoices', r)
+    return r
+  },
+  // Hóa đơn không bao giờ thay đổi nên đã có trong máy thì dùng luôn, khỏi gọi server.
+  getInvoice: async (id: string) => {
+    const c = cache.invoice(id)
+    if (c && c.items) return c
+    const r = await call<Invoice>('getInvoice', { id })
+    try {
+      save('c_inv_' + id, r)
+    } catch {
+      /* ignore */
+    }
+    return r
+  },
 }
