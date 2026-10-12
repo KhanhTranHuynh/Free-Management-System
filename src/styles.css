@@ -1,4 +1,4 @@
-:root { --c: #0f766e; --bg: #f6f7f8; --line: #e2e5e8; --muted: #6b7280; }
+:root { --c: #be185d; --bg: #f6f7f8; --line: #e2e5e8; --muted: #6b7280; }
 * { box-sizing: border-box; }
 body { margin: 0; font: 16px/1.45 -apple-system, system-ui, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: #111827; }
 .app { max-width: 720px; margin: 0 auto; min-height: 100vh; padding: env(safe-area-inset-top) 12px 84px; }

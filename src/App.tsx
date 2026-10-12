@@ -38,7 +38,7 @@ export default function App() {
   return (
     <div className="app">
       <header className="no-print">
-        <h1>Hóa đơn dịch vụ</h1>
+        <h1>Sohee Nails</h1>
         {isLocalMode && <span className="badge">Chế độ thử (chưa nối Google)</span>}
       </header>
 
@@ -160,7 +160,7 @@ function NewInvoice({ services, loading }: { services: Service[]; loading: boole
 }
 
 function InvoiceView({ invoice, onClose, closeLabel }: { invoice: Invoice; onClose: () => void; closeLabel: string }) {
-  const shop = localStorage.getItem('shopName') || 'Tên cửa hàng'
+  const shop = localStorage.getItem('shopName') || 'Sohee Nails'
   const info = localStorage.getItem('shopInfo') || ''
   const bankAcc = (localStorage.getItem('bankAcc') || '').replace(/\s/g, '')
   const bankName = localStorage.getItem('bankName') || ''
